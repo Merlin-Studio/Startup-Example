@@ -1,0 +1,115 @@
+
+# ============================================================================
+# FOLDER HIERARCHY STRUCTURE
+# Type: environment_based
+# ============================================================================
+
+# Hierarchy configuration
+hierarchy_type = "environment_based"
+enable_nested_folders = false
+
+# Top-Level Folders
+# These are the primary organizational units under your GCP organization
+top_level_folders = {
+  "Production" = {
+    display_name = "Production"
+    purpose      = "environment"
+    description  = "Production workloads"
+  },
+  "Development" = {
+    display_name = "Development"
+    purpose      = "environment"
+    description  = "Development and testing"
+  }
+}
+
+
+# ============================================================================
+# BOOTSTRAP/SEED PROJECTS
+# Foundation projects for shared infrastructure services
+# ============================================================================
+
+bootstrap_projects = {
+  "prj-shared-services" = {
+    purpose = "cicd"
+    folder  = "Production"
+    services = [
+      "cloudbuild.googleapis.com"
+    ]
+  }
+}
+
+# ============================================================================
+# PROJECT NAMING CONVENTIONS
+# ============================================================================
+
+# Project naming template
+# Available placeholders: {prefix}, {env}, {team}, {app}, {purpose}, {region}, {bu}
+project_naming_convention = "{prefix}-{env}-{purpose}"
+
+# Project ID prefix (used to ensure uniqueness)
+project_id_prefix = "acme-lz2"
+
+# ============================================================================
+# ENVIRONMENT CONFIGURATIONS
+# Defines deployment environments and their characteristics
+# ============================================================================
+
+environments = {
+  "development" = {
+    name            = "Development"
+    short_code      = "dev"
+    folder          = "Development"
+    is_production   = false
+    approval_required = false
+  },
+  "production" = {
+    name            = "Production"
+    short_code      = "prd"
+    folder          = "Production"
+    is_production   = true
+    approval_required = false
+  }
+}
+
+# Environment short codes for use in resource naming
+env_short_codes = {
+  "development" = "dev",
+  "production" = "prd"
+}
+
+# ============================================================================
+# PROJECT FACTORY CONFIGURATION
+# ============================================================================
+
+project_factory_enabled = true
+
+# Default quotas for new projects
+project_quota_defaults = {
+  max_projects_per_folder = 50
+  default_compute_quota   = 24
+}
+
+# ============================================================================
+# FOLDER IAM BINDINGS
+# Access controls applied at the folder level (inherited by child resources)
+# ============================================================================
+
+# No folder-level IAM bindings configured
+# folder_iam = {}
+
+
+# ============================================================================
+# CROSS-SECTION SUMMARY
+# These derived values are referenced by other landing zone sections
+# ============================================================================
+
+# Summary of hierarchy configuration for downstream consumers
+
+# ============================================================================
+# Next Steps:
+# 1. Review folder structure matches your organizational needs
+# 2. Verify IAM bindings follow principle of least privilege
+# 3. Proceed to 03_iam_model.tfvars for detailed IAM configuration
+# 4. Folder structure changes after deployment are complex - verify now!
+# ============================================================================

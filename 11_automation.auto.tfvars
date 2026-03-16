@@ -1,0 +1,206 @@
+
+# ============================================================================
+# INFRASTRUCTURE AS CODE CONFIGURATION
+# ============================================================================
+# IaC tool selection and configuration for managing GCP resources
+
+iac_tool = "terraform"
+
+# ============================================================================
+# TERRAFORM CONFIGURATION
+# ============================================================================
+# Terraform backend, state management, and versioning settings
+
+terraform_config = {
+  state_backend = "gcs"
+  state_locking = true
+  version_constraint = "~> 5.0"
+  workspace_strategy = "directories"
+}
+
+# Terraform State Bucket Configuration
+# Bucket will be created with versioning and uniform bucket-level access
+terraform_state_bucket = {
+  name     = ""
+  location = "us-central1"
+  
+  versioning = true
+  uniform_bucket_level_access = true
+  
+  lifecycle_rule = {
+    action = {
+      type = "Delete"
+    }
+    condition = {
+      num_newer_versions = 10
+      with_state         = "ARCHIVED"
+    }
+  }
+}
+
+# ============================================================================
+# CI/CD PLATFORM CONFIGURATION
+# ============================================================================
+# Continuous integration and deployment pipeline settings
+
+cicd_config = {
+  platform = "github_actions"
+  workload_identity_enabled = true
+  artifact_registry_enabled = true
+  vulnerability_scanning = true
+  binary_authorization = false
+}
+
+# ============================================================================
+# WORKLOAD IDENTITY FEDERATION
+# ============================================================================
+# Keyless authentication for CI/CD platforms
+# Eliminates the need for service account keys
+
+workload_identity_pool = {
+  pool_id         = "github-pool"
+  display_name    = "GitHub Actions Pool"
+  description     = "Workload Identity Pool for GitHub Actions"
+  
+  provider = {
+    provider_id = "github-provider"
+    display_name = "GitHub"
+    
+    # GitHub Actions OIDC issuer
+    issuer_uri = "https://token.actions.githubusercontent.com"
+    
+    attribute_mapping = {
+      "google.subject"       = "assertion.sub"
+      "attribute.actor"      = "assertion.actor"
+      "attribute.repository" = "assertion.repository"
+      "attribute.ref"        = "assertion.ref"
+    }
+    
+    # Restrict to specific repository (recommended)
+    # attribute_condition = "assertion.repository == 'org/repo'"
+  }
+}
+
+# ============================================================================
+# ARTIFACT REGISTRY
+# ============================================================================
+# Private package and container image hosting
+
+artifact_registry = {
+  location    = "us-central1"
+  format      = "DOCKER"
+  description = "Container images for acme-lz2"
+  
+  # Vulnerability scanning enabled
+  # Images will be automatically scanned on push
+
+  cleanup_policies = {
+    # Keep last 10 versions of each tag
+    keep_recent = {
+      action = "KEEP"
+      most_recent_versions = {
+        keep_count = 10
+      }
+    }
+    # Delete untagged images older than 7 days
+    delete_untagged = {
+      action = "DELETE"
+      condition = {
+        tag_state = "UNTAGGED"
+        older_than = "604800s"  # 7 days
+      }
+    }
+  }
+}
+
+# ============================================================================
+# DEPLOYMENT PIPELINES
+# ============================================================================
+# Multi-environment deployment configuration
+
+deployment_pipelines = [
+  {
+    name = "infrastructure"
+    type = "terraform"
+
+    environments = [
+      "dev",
+      "staging",
+      "prod"
+    ]
+
+    require_approval = [
+      "prod"
+    ]
+  }
+]
+
+# Cloud Deploy Pipeline Configuration
+
+# ============================================================================
+# POLICY AS CODE
+# ============================================================================
+# Automated policy validation in CI/CD pipelines
+
+policy_as_code = {
+  enabled = false
+}
+
+# Policy validation is disabled
+# To enable, set policy_as_code.enabled = true in the wizard
+
+# ============================================================================
+# GITOPS CONFIGURATION
+# ============================================================================
+# Git-driven continuous deployment for Kubernetes
+
+gitops_config = {
+  enabled = false
+}
+
+# GitOps is disabled
+# Enable for Kubernetes workloads to sync from Git
+
+# ============================================================================
+# DRIFT DETECTION
+# ============================================================================
+# Detect when infrastructure differs from code
+
+drift_detection = {
+  enabled = false
+}
+
+# Drift detection is disabled
+# Enable to detect when infrastructure differs from Terraform code
+
+# ============================================================================
+# CI/CD SERVICE ACCOUNTS
+# ============================================================================
+# Service accounts for CI/CD pipelines (when not using Workload Identity)
+
+
+# ============================================================================
+# AUTOMATION SUMMARY
+# ============================================================================
+# Summary of automation configuration
+
+# IaC Tool: Terraform
+# State Backend: GCS
+# State Locking: Enabled
+# CI/CD Platform: Github Actions
+# Workload Identity: Enabled
+# Artifact Registry: Enabled
+# Policy Validation: Disabled
+# GitOps: Disabled
+# Drift Detection: Disabled
+
+# ============================================================================
+# Next Steps:
+# 1. Review the generated configuration above
+# 2. Run: terraform init
+# 3. Run: terraform plan -out=11_automation.tfplan
+# 4. Review the plan carefully
+# 5. Run: terraform apply 11_automation.tfplan
+# 6. Configure your CI/CD platform with Workload Identity
+# 7. Set up your first deployment pipeline
+# ============================================================================

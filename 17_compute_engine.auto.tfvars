@@ -1,0 +1,116 @@
+
+# ============================================================================
+# VM INSTANCE POLICIES
+# ============================================================================
+
+compute_engine = {
+  enabled = true
+
+  # Default Machine Family
+  default_machine_family = "e2"
+
+  # Shielded VM Policy
+  shielded_vm = {
+    enabled              = false
+    secure_boot          = false
+    vtpm                 = true
+    integrity_monitoring = true
+  }
+
+
+  # Access Controls
+  access_controls = {
+    os_login_enabled             = false
+    os_login_2fa                 = false
+    block_project_ssh_keys       = false
+    disable_serial_port          = false
+    restrict_external_ip         = "allow"
+    disable_nested_virtualization = false
+    require_service_account      = false
+  }
+
+  # Network Policies
+  network_policies = {
+    ip_forwarding_disabled = true
+    default_network_tier   = "PREMIUM"
+    require_network_tags   = false
+  }
+
+  # Metadata Policies
+  metadata_policies = {
+    enable_guest_attributes          = false
+    block_project_metadata_ssh_keys  = false
+  }
+}
+
+# ============================================================================
+# DISK & STORAGE POLICIES
+# ============================================================================
+
+disk_defaults = {
+  default_disk_type       = "pd-balanced"
+  default_boot_disk_size_gb = 50
+  encryption              = "google_managed"
+  auto_delete_boot_disk   = true
+
+  snapshot_policy = {
+    enabled = false
+  }
+}
+
+# ============================================================================
+# IMAGE & OS POLICIES
+# ============================================================================
+
+image_os_policies = {
+  # Trusted Image Policy
+  trusted_images = {
+    enforce = false
+  }
+
+  # OS Configuration Management
+  os_config = {
+    enabled = false
+
+
+  }
+}
+
+# ============================================================================
+# INSTANCE GROUP POLICIES
+# ============================================================================
+
+instance_group_defaults = {
+  enabled = false
+}
+
+# ============================================================================
+# SOLE-TENANT & PLACEMENT POLICIES
+# ============================================================================
+
+sole_tenant_config = {
+  enabled = false
+}
+
+placement_policy = {
+  enabled = false
+}
+
+# ============================================================================
+# COMPUTE ENGINE POLICIES SUMMARY
+# ============================================================================
+
+# Compute Engine:      Enabled
+# Machine Family:      e2
+# Shielded VMs:        Not required
+# OS Login:            Not enforced
+# External IPs:        allow
+# Disk Encryption:     google_managed
+# Snapshot Policy:     Disabled
+# Trusted Images:      Not enforced
+# OS Patching:         Disabled
+# Instance Groups:     Disabled
+# Sole-Tenant:         Disabled
+#
+# Note: This section defines compute policies and defaults.
+# Individual VMs and instance groups are deployed by application teams.

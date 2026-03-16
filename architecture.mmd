@@ -1,0 +1,347 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%% ============================================================================
+%% GCP LANDING ZONE ARCHITECTURE DIAGRAMS
+%% Organization: Acme-LZ2
+%% Generated: 2026-03-15T13:43:29.788801Z
+%% Profile: SIMPLE
+%% ============================================================================
+%%
+%% Render this file at: https://mermaid.live/
+%%
+%% ============================================================================
+
+
+%% ============================================================================
+%% ARCHITECTURE OVERVIEW
+%% ============================================================================
+%% Always-rendered summary of the landing zone configuration
+
+
+
+
+
+
+
+
+
+
+
+
+
+graph TB
+    subgraph ORG["Acme-LZ2 — GCP Landing Zone"]
+        direction TB
+
+        %% Hierarchy
+
+        FOLDERS["📁 Folders<br/>Production, Development"]
+
+
+        %% Networking
+
+        NET["🌐 Networking: standalone<br/>vpc-main (production)"]
+
+
+
+        NET_vpc_main["📦 vpc-main subnets<br/>sb-main-us-central1: 10.0.0.0/24"]
+        NET --- NET_vpc_main
+
+
+
+
+
+        %% Hybrid Connectivity
+
+
+        %% Security
+
+
+
+
+        SEC["🛡️ Security<br/>8 org policies"]
+
+        %% Workloads
+
+
+        %% Data Platform
+
+
+
+
+
+
+
+
+        %% DR
+
+
+        %% Connections
+        FOLDERS --- NET
+        FOLDERS --- SEC
+
+
+
+    end
+
+    %% Styling
+    style ORG fill:none,stroke:#4285F4,stroke-width:2px
+    style FOLDERS fill:#4285F4,stroke:#1a73e8,stroke-width:2px,color:white
+    style NET fill:#34A853,stroke:#1e8e3e,stroke-width:2px,color:white
+    style SEC fill:#EA4335,stroke:#d93025,stroke-width:2px,color:white
+
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 1: RESOURCE HIERARCHY
+%% ============================================================================
+%% Shows: Organization > Folders > Projects structure with IAM inheritance
+
+
+
+graph TD
+    subgraph ORG["🏢 Organization: Acme-LZ2"]
+        direction TB
+        ORG_ROOT(("org-id"))
+        
+
+        %% Folder: Production
+        ORG_ROOT --> FOLDER_Production["📁 Production"]
+
+
+        %% Folder: Development
+        ORG_ROOT --> FOLDER_Development["📁 Development"]
+
+
+
+
+        %% Bootstrap/Seed Projects
+
+        FOLDER_Production --> PRJ_prj_shared_services[("💼 prj-shared-services")]
+
+
+    end
+
+    %% Styling
+    style ORG_ROOT fill:#4285F4,stroke:#1a73e8,stroke-width:3px,color:white
+
+
+    style FOLDER_Production fill:#4285F4,stroke:#1a73e8,stroke-width:2px,color:white
+
+
+
+    style FOLDER_Development fill:#4285F4,stroke:#1a73e8,stroke-width:2px,color:white
+
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 2: NETWORK TOPOLOGY
+%% ============================================================================
+%% Shows: VPCs, Subnets, Peering, NAT, and Google APIs access
+
+
+
+graph TB
+    subgraph NET["🌐 Network Architecture: STANDALONE"]
+        direction TB
+        
+
+        subgraph VPC_vpc_main["VPC: vpc-main"]
+            direction TB
+            VPC_vpc_main_NODE["🔷 vpc-main<br/>GLOBAL<br/><i>production</i>"]
+
+            VPC_vpc_main_NODE --- SUB_sb_main_us_central1["📦 sb-main-us-central1<br/>10.0.0.0/24<br/><i>us-central1</i>"]
+
+        end
+
+
+
+
+
+        %% Cloud NAT & Internet
+        INTERNET["🌍 Internet"]
+
+        NAT_nat_vpc_main_us_central1["🔀 NAT: nat-vpc-main-us-central1"]
+        VPC_vpc_main_NODE --> NAT_nat_vpc_main_us_central1
+        NAT_nat_vpc_main_us_central1 --> INTERNET
+
+
+
+
+        %% Google APIs
+        GAPI["☁️ Google APIs"]
+
+        VPC_vpc_main_NODE -.->|"PGA"| GAPI
+
+
+    end
+
+    %% Styling
+
+    style INTERNET fill:#EA4335,stroke:#d93025,stroke-width:2px,color:white
+
+
+    style GAPI fill:#34A853,stroke:#1e8e3e,stroke-width:2px,color:white
+
+
+
+    style VPC_vpc_main_NODE fill:#34A853,stroke:#1e8e3e,stroke-width:2px,color:white
+
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 3: HYBRID CONNECTIVITY
+%% ============================================================================
+%% Shows: On-premises to GCP connectivity (VPN/Interconnect)
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 4: IAM & IDENTITY
+%% ============================================================================
+%% Shows: Identity Provider > Groups > Roles > Resources
+
+
+
+graph LR
+    subgraph IDP["🔐 Identity Provider"]
+
+        IDENTITY["Google Workspace"]
+
+    end
+
+    subgraph GROUPS["👥 Admin Groups"]
+        direction TB
+
+        GROUP_1["Org Admin"]
+
+    end
+
+    subgraph ROLES["🎭 Organization Roles"]
+        direction TB
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ROLE_1["resourcemanager.organizationAdmin"]
+
+        ROLE_2["billing.admin"]
+
+
+    end
+
+
+    subgraph SAs["🤖 Service Accounts"]
+        direction TB
+
+        SA_1["terraform-sa"]
+
+
+    end
+
+
+    subgraph ORG["🏢 Organization"]
+        ORG_NODE(("Resources"))
+    end
+
+    %% Connections
+
+    IDENTITY --> GROUP_1
+    GROUP_1 -.-> ORG_NODE
+
+
+
+    SA_1 -.-> ORG_NODE
+
+
+
+    %% Styling
+    style IDENTITY fill:#EA4335,stroke:#d93025,stroke-width:2px,color:white
+    style ORG_NODE fill:#4285F4,stroke:#1a73e8,stroke-width:2px,color:white
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 5: VPC SERVICE CONTROLS (if enabled)
+%% ============================================================================
+%% Shows: Security perimeters and access levels
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 6: DISASTER RECOVERY
+%% ============================================================================
+%% Shows: Primary/DR regions and replication flows
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 7: GKE ARCHITECTURE (if enabled)
+%% ============================================================================
+%% Shows: GKE clusters, node pools, and security features
+
+
+
+
+
+%% ============================================================================
+%% DIAGRAM 8: DATA PLATFORM (if enabled)
+%% ============================================================================
+%% Shows: Data ingestion, storage, and analytics flow
+
+
+
+
+
+%% ============================================================================
+%% END OF DIAGRAMS
+%% ============================================================================
+%% Legend:
+%%   📁 Folder          💼 Project         🌐 VPC            📦 Subnet
+%%   🔒 VPN/Security    ⚡ Interconnect    🔀 Router/NAT     🌍 Internet
+%%   ☁️ Cloud Service   💾 Database        🗄️ Storage        🚀 GKE
+%%   🔐 Identity        👥 Group           🎭 Role           🤖 Service Account
+%%   🛡️ Security        🟢 Production      🟡 Standby        🔴 DR
+%% ============================================================================

@@ -1,0 +1,350 @@
+# ----------------------------------------------------------------------------
+# COMPLIANCE FRAMEWORK UPGRADES
+# The following values were automatically upgraded from their defaults to meet
+# compliance framework requirements. User-explicit values were preserved.
+# ----------------------------------------------------------------------------
+# [CIS] data_classification_config.enabled: False -> True (CIS GCP 5.1, 7.1)
+# [CIS] data_classification_config.classification_tiers: <unset> -> [{'tier': 'internal', 'encryption_required': 'google_managed', 'require_vpc_sc': False, 'require_access_logging': True}, {'tier': 'confidential', 'encryption_required': 'google_managed', 'require_vpc_sc': False, 'require_access_logging': True}] (CIS GCP 5.1, 7.1 — data classification tiers for CMEK and access control)
+# [CIS] organization_policies[compute.requireShieldedVm]: <missing> -> enforce (CIS GCP 4.x — Shielded VM features required)
+# [CIS] organization_policies[compute.disableSerialPortAccess]: <missing> -> enforce (CIS GCP 4.x — disable unaudited console access)
+# [CIS] organization_policies[compute.requireOsLogin]: <missing> -> enforce (CIS GCP 4.x — IAM-based SSH access management)
+# [CIS] organization_policies[compute.disableNestedVirtualization]: <missing> -> enforce (CIS GCP 4.x — reduce hypervisor attack surface)
+# [CIS] organization_policies[compute.vmExternalIpAccess]: <missing> -> deny_all (CIS GCP 4.x — restrict external IP assignment)
+# ----------------------------------------------------------------------------
+
+
+# ============================================================================
+# COMPLIANCE STANDARD
+# ============================================================================
+
+# Primary compliance framework guiding security controls
+compliance_standard = "cis_gcp_v2"
+
+# ============================================================================
+# ORGANIZATION POLICIES
+# Preventive guardrails enforced across the organization
+# ============================================================================
+
+org_policies = {
+  "compute.skipDefaultNetworkCreation" = {
+    constraint  = "constraints/compute.skipDefaultNetworkCreation"
+    enforcement = "enforce"
+    scope       = "organization"
+    
+
+  },
+  "storage.uniformBucketLevelAccess" = {
+    constraint  = "constraints/storage.uniformBucketLevelAccess"
+    enforcement = "enforce"
+    scope       = "organization"
+    
+
+  },
+  "iam.disableServiceAccountKeyCreation" = {
+    constraint  = "constraints/iam.disableServiceAccountKeyCreation"
+    enforcement = "not_enforce"
+    scope       = "organization"
+    
+
+  },
+  "compute.requireShieldedVm" = {
+    constraint  = "constraints/compute.requireShieldedVm"
+    enforcement = "enforce"
+    scope       = "organization"
+    
+
+  },
+  "compute.disableSerialPortAccess" = {
+    constraint  = "constraints/compute.disableSerialPortAccess"
+    enforcement = "enforce"
+    scope       = "organization"
+    
+
+  },
+  "compute.requireOsLogin" = {
+    constraint  = "constraints/compute.requireOsLogin"
+    enforcement = "enforce"
+    scope       = "organization"
+    
+
+  },
+  "compute.disableNestedVirtualization" = {
+    constraint  = "constraints/compute.disableNestedVirtualization"
+    enforcement = "enforce"
+    scope       = "organization"
+    
+
+  },
+  "compute.vmExternalIpAccess" = {
+    constraint  = "constraints/compute.vmExternalIpAccess"
+    enforcement = "deny_all"
+    scope       = "organization"
+    
+
+  }
+}
+
+
+# ============================================================================
+# CLOUD KMS CONFIGURATION
+# Customer-managed encryption keys
+# ============================================================================
+
+kms_config = {
+  enabled     = true
+  key_project = "prj-seed-kms"
+  
+  key_rings = {
+    "kr-us-central1" = {
+      name     = "kr-us-central1"
+      location = "us-central1"
+      purpose  = "general"
+    }
+  }
+
+  keys = {
+    "compute-disk-key" = {
+      key_ring         = "kr-us-central1"
+      rotation_period  = "7776000s"
+      purpose          = "ENCRYPT_DECRYPT"
+      algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protection_level = "SOFTWARE"
+      labels = {
+        service = "compute"
+        managed_by = "terraform"
+      }
+    },
+    "gcs-key" = {
+      key_ring         = "kr-us-central1"
+      rotation_period  = "7776000s"
+      purpose          = "ENCRYPT_DECRYPT"
+      algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protection_level = "SOFTWARE"
+      labels = {
+        service = "cloud-storage"
+        managed_by = "terraform"
+      }
+    },
+    "bigquery-key" = {
+      key_ring         = "kr-us-central1"
+      rotation_period  = "7776000s"
+      purpose          = "ENCRYPT_DECRYPT"
+      algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protection_level = "SOFTWARE"
+      labels = {
+        service = "bigquery"
+        managed_by = "terraform"
+      }
+    },
+    "cloudsql-key" = {
+      key_ring         = "kr-us-central1"
+      rotation_period  = "7776000s"
+      purpose          = "ENCRYPT_DECRYPT"
+      algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protection_level = "SOFTWARE"
+      labels = {
+        service = "cloud-sql"
+        managed_by = "terraform"
+      }
+    },
+    "pubsub-key" = {
+      key_ring         = "kr-us-central1"
+      rotation_period  = "7776000s"
+      purpose          = "ENCRYPT_DECRYPT"
+      algorithm        = "GOOGLE_SYMMETRIC_ENCRYPTION"
+      protection_level = "SOFTWARE"
+      labels = {
+        service = "pubsub"
+        managed_by = "terraform"
+      }
+    }
+  }
+
+  # Services that should use CMEK by default
+  default_encryption = {
+    pubsub = true
+    gke_secrets = false
+    bigquery = true
+    cloud_storage = true
+    cloud_sql = true
+    firestore = false
+    dataflow = false
+    compute_disks = true
+  }
+}
+
+# ============================================================================
+# AUDIT LOGGING CONFIGURATION
+# ============================================================================
+
+audit_logging = {
+  # Admin Activity logs are always enabled
+  admin_activity = true
+  
+  # Data Access logging configuration
+  data_access = {
+    enabled = true
+  }
+
+  # Log retention
+  retention_days = 365
+  
+  # Log sink configuration
+  log_sink_destination = "none"
+  sink_project         = ""
+}
+
+# Audit log IAM configuration for org-level data access logs
+audit_config = {
+  "allServices" = {
+    audit_log_configs = [
+      {
+        log_type = "ADMIN_READ"
+      }
+    ]
+  }
+}
+
+# ============================================================================
+# ACCESS TRANSPARENCY
+# Visibility into Google admin access
+# ============================================================================
+
+access_transparency = {
+  enabled = false
+}
+
+# ============================================================================
+# SECURITY CONTACTS
+# Essential contacts for security notifications
+# ============================================================================
+
+security_contacts = {
+  "cloudteam_at_acme_com" = {
+    email = "cloudteam@acme.com"
+    notification_categories = [
+      "security",
+      "technical",
+      "billing"
+    ]
+  }
+}
+
+# Essential contacts module configuration
+essential_contacts = [
+  {
+    email                    = "cloudteam@acme.com"
+    notification_category_subscriptions = [
+      "SECURITY",
+      "TECHNICAL",
+      "BILLING"
+    ]
+  }
+]
+
+# ============================================================================
+# DATA RESIDENCY & SOVEREIGNTY
+# Resource location constraints and data sovereignty controls
+# ============================================================================
+
+data_residency = {
+  enforce_resource_locations = false
+
+  allowed_locations = []
+
+  # Assured Workloads - Google-managed compliance environment
+  assured_workloads = {
+    enabled           = false
+  }
+
+  # Access Approval - require explicit approval for Google admin access (CIS GCP 2.15)
+  access_approval = {
+    enabled = false
+  }
+}
+
+
+# ============================================================================
+# DATA CLASSIFICATION
+# Classification tiers and handling policies
+# ============================================================================
+
+data_classification = {
+  enabled = true
+
+  classification_tiers = {
+    "internal" = {
+      tier                   = "internal"
+      encryption_required    = "google_managed"
+      require_vpc_sc         = false
+      require_access_logging = true
+    },
+    "confidential" = {
+      tier                   = "confidential"
+      encryption_required    = "google_managed"
+      require_vpc_sc         = false
+      require_access_logging = true
+    }
+  }
+}
+
+# ============================================================================
+# DERIVED VALUES - Computed security flags
+# ============================================================================
+
+# Compliance standard
+
+# CMEK enabled flag
+
+# Data access logging enabled
+
+# Log retention period
+
+# Security policies count
+
+# Access transparency
+
+# Data residency
+
+# Data classification
+
+# Cloud Armor
+
+# ============================================================================
+# CLOUD ARMOR
+# Web application firewall and DDoS protection
+# ============================================================================
+
+cloud_armor = {
+  enabled = true
+
+  # Security policies
+  policies = {
+    "default-waf-policy" = {
+      name               = "default-waf-policy"
+      type               = "CLOUD_ARMOR"
+      default_action     = "allow"
+      adaptive_protection = true
+
+      # Pre-configured WAF rules
+      preconfigured_waf_rules = [
+        "sqli-v33-stable",
+        "xss-v33-stable",
+        "lfi-v33-stable",
+        "rce-v33-stable"
+      ]
+    }
+  }
+
+  rate_limiting_rules = {}
+}
+
+# ============================================================================
+# Next Steps:
+# 1. Review org policies and add exceptions as needed
+# 2. Create KMS key rings and keys if CMEK is enabled
+# 3. Configure audit log sinks to BigQuery or Cloud Storage
+# 4. Add security contacts to receive notifications
+# 5. Configure Cloud Armor WAF policies for web-facing workloads
+# 6. Proceed to 07_advanced_security.tfvars for VPC-SC and additional controls
+# ============================================================================

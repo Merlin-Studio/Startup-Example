@@ -1,0 +1,245 @@
+# Deployment Guide — acme-lz2
+
+> This guide walks you through deploying the generated configuration files step by step,
+> from initial setup to a running GCP landing zone.
+
+---
+
+## Overview
+
+Your configuration was generated as **`.tfvars` variable files** — HCL files
+containing Terraform variable assignments that capture your design decisions.
+
+These files are **not directly executable**. They require Terraform modules
+(resource definitions) that declare matching variables and use them to create
+GCP resources.
+
+---
+
+## 1. Prerequisites
+
+| Requirement | Minimum Version | Check Command |
+|-------------|-----------------|---------------|
+| Terraform | >= 1.7 | `terraform version` |
+| Google Cloud SDK | Latest | `gcloud version` |
+
+**GCP permissions required:**
+
+- Organization Administrator (`roles/resourcemanager.organizationAdmin`)
+- Billing Account Administrator (`roles/billing.admin`)
+- A GCP project for the Terraform state bucket
+
+---
+
+## 2. Understanding the Generated Files
+
+Your zip contains `.auto.tfvars` files organized by deployment stage:
+
+| File | Stage | Purpose |
+|------|-------|---------|
+| `00_discovery.auto.tfvars` | Reference | Discovery values (region, org ID) |
+| `01_metadata.auto.tfvars` | Reference | Project metadata and profile |
+| `02_resource_hierarchy.auto.tfvars` | 1 - Bootstrap | Folders and organizational structure |
+| `03_iam_model.auto.tfvars` | 1 - Bootstrap | IAM groups, roles, service accounts |
+| `04_networking.auto.tfvars` | 2 - Networking | VPCs, subnets, firewall rules |
+| `05_hybrid_connectivity.auto.tfvars` | 2 - Networking | VPN tunnels, interconnects |
+| `06_security_baseline.auto.tfvars` | 3 - Security | Org policies, KMS, SCC |
+| `07_advanced_security.auto.tfvars` | 3 - Security | VPC-SC, CMEK, DLP |
+| `08_logging_monitoring.auto.tfvars` | 4 - Operations | Log sinks, monitoring |
+| `09_cost_management.auto.tfvars` | 4 - Operations | Budgets, alerts |
+
+**Key point:** `.auto.tfvars` files are automatically loaded by Terraform when
+placed in the working directory — no `-var-file` flag is needed.
+
+---
+
+## 3. Creating a Terraform Project Structure
+
+For each deployment stage, create a Terraform project directory:
+
+```
+landing-zone/
+├── 1-bootstrap/
+│   ├── main.tf              # Resource definitions
+│   ├── variables.tf          # Variable declarations matching tfvars
+│   ├── provider.tf           # Google provider config
+│   ├── backend.tf            # GCS state backend
+│   ├── outputs.tf            # Values for downstream stages
+│   ├── 02_resource_hierarchy.auto.tfvars   # ← generated file
+│   └── 03_iam_model.auto.tfvars            # ← generated file
+├── 2-networking/
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── provider.tf
+│   ├── backend.tf
+│   ├── 04_networking.auto.tfvars           # ← generated file
+│   └── 05_hybrid_connectivity.auto.tfvars  # ← generated file
+├── 3-security/
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── provider.tf
+│   ├── backend.tf
+│   ├── 06_security_baseline.auto.tfvars    # ← generated file
+│   └── 07_advanced_security.auto.tfvars    # ← generated file
+└── 4-operations/
+    ├── main.tf
+    ├── variables.tf
+    ├── provider.tf
+    ├── backend.tf
+    ├── 08_logging_monitoring.auto.tfvars    # ← generated file
+    └── 09_cost_management.auto.tfvars       # ← generated file
+```
+
+---
+
+## 4. Provider Configuration
+
+Each stage needs a `provider.tf`:
+
+```hcl
+# provider.tf
+terraform {
+  required_version = ">= 1.7"
+
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 5.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = ">= 5.0"
+    }
+  }
+}
+
+provider "google" {
+  # Authenticate via:
+  #   gcloud auth application-default login
+  # Or set GOOGLE_APPLICATION_CREDENTIALS to a service account key
+}
+
+provider "google-beta" {}
+```
+
+---
+
+## 5. State Backend Configuration
+
+Each stage needs a `backend.tf` with a unique state prefix:
+
+```hcl
+# backend.tf
+terraform {
+  backend "gcs" {
+    bucket = "YOUR_STATE_BUCKET"
+    prefix = "landing-zone/1-bootstrap"   # unique per stage
+  }
+}
+```
+
+Create the state bucket first:
+
+```bash
+gcloud storage buckets create gs://YOUR_STATE_BUCKET \
+  --project=YOUR_STATE_PROJECT \
+  --location=us-central1 \
+  --uniform-bucket-level-access
+```
+
+---
+
+## 6. Writing Variable Declarations
+
+For each `.auto.tfvars` file, create matching `variable` blocks in `variables.tf`.
+Example — if your `02_resource_hierarchy.auto.tfvars` contains:
+
+```hcl
+folder_structure = {
+  networking = { ... }
+  security   = { ... }
+  teams      = { ... }
+}
+```
+
+Then `variables.tf` must declare:
+
+```hcl
+variable "folder_structure" {
+  description = "Organization folder hierarchy"
+  type        = map(any)
+}
+```
+
+Terraform will automatically match `.auto.tfvars` variable assignments to these
+declarations.
+
+---
+
+## 7. Deployment Workflow
+
+Deploy stages in order — each stage may produce outputs consumed by the next.
+
+```bash
+# Stage 1: Bootstrap
+cd landing-zone/1-bootstrap
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Stage 2: Networking
+cd ../2-networking
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Stage 3: Security
+cd ../3-security
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+
+# Stage 4: Operations
+cd ../4-operations
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+> **Tip:** Always use `terraform plan -out=tfplan` followed by
+> `terraform apply tfplan` to ensure you apply exactly what you reviewed.
+
+---
+
+## 8. Post-Deployment Verification
+
+```bash
+# Verify organization structure
+gcloud resource-manager folders list --organization=
+
+# Verify IAM bindings
+gcloud organizations get-iam-policy  --format=json
+
+# Verify projects were created
+gcloud projects list --filter="parent.type=folder"
+
+# Verify networking
+gcloud compute networks list --project=YOUR_NETWORK_PROJECT
+```
+
+---
+
+## 9. Common Issues
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| `Error: No variable declaration found` | Missing `variable` block in `variables.tf` | Add a matching variable declaration for each value in the `.auto.tfvars` file |
+| `Error: Unsupported argument` | Variable name mismatch between `.auto.tfvars` and module | Ensure variable names in `variables.tf` match exactly |
+| `Error: Provider configuration not present` | Missing or misconfigured `provider.tf` | Add the Google provider block |
+| State locking errors | Another process holds the state lock | Wait for the other process, or use `terraform force-unlock` (with caution) |
+
+
+
+---
+
+*Generated by Merlin Studio. Licensed under [CC BY-ND 4.0](https://creativecommons.org/licenses/by-nd/4.0/)*

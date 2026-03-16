@@ -1,0 +1,150 @@
+
+# ============================================================================
+# BILLING EXPORT
+# ============================================================================
+
+billing_export = {
+  enabled         = true
+  destination     = "bigquery"
+  dataset_project = ""
+  dataset_name    = ""
+  
+  export_types = [
+    "standard"
+  ]
+}
+
+# ============================================================================
+# BUDGETS
+# ============================================================================
+
+budgets = {
+  "total-monthly-budget" = {
+    display_name    = "Total Monthly Budget"
+    scope           = "billing_account"
+    currency_code   = "USD"
+    amount          = 1000
+    time_period     = "monthly"
+    include_credits = true
+    
+    # Alert thresholds
+    thresholds = [
+      {
+        percent = 50
+        basis   = "CURRENT_SPEND"
+      },
+      {
+        percent = 80
+        basis   = "CURRENT_SPEND"
+      },
+      {
+        percent = 100
+        basis   = "CURRENT_SPEND"
+      }
+    ]
+
+    # Notification settings
+    notification_channels = {
+      email  = true
+      pubsub = false
+    }
+  }
+}
+
+
+# ============================================================================
+# COST ALLOCATION
+# ============================================================================
+
+cost_allocation = {
+  enabled_labels = []
+
+}
+
+# ============================================================================
+# COMMITTED USE DISCOUNTS
+# ============================================================================
+
+committed_use_discounts = {
+  enabled          = false
+  compute_cuds     = []
+  spend_based_cuds = []
+}
+
+# ============================================================================
+# COST OPTIMIZATION POLICIES
+# ============================================================================
+
+cost_optimization = {
+  auto_delete_unused_resources = false
+  unused_ip_cleanup            = true
+  idle_vm_recommendations      = true
+  rightsizing_recommendations  = true
+  unattached_disk_alerts       = true
+  preemptible_for_dev          = true
+}
+
+# Recommender configuration
+active_assist_recommendations = {
+  "google.compute.instance.MachineTypeRecommender" = {
+    enabled = true
+  }
+  "google.compute.instance.IdleResourceRecommender" = {
+    enabled = true
+  }
+  "google.compute.disk.IdleResourceRecommender" = {
+    enabled = true
+  }
+  "google.compute.address.IdleResourceRecommender" = {
+    enabled = true
+  }
+}
+
+# ============================================================================
+# QUOTA MONITORING
+# ============================================================================
+
+quota_monitoring = {
+  enabled         = true
+  alert_threshold = 80
+  
+  monitored_quotas = [
+    "compute.googleapis.com/cpus",
+    "compute.googleapis.com/ssd_total_gb"
+  ]
+}
+
+# Quota alert policies
+quota_alerts = {
+  "compute-googleapis-com-cpus" = {
+    metric     = "compute.googleapis.com/cpus"
+    threshold  = 0.8
+  },
+  "compute-googleapis-com-ssd_total_gb" = {
+    metric     = "compute.googleapis.com/ssd_total_gb"
+    threshold  = 0.8
+  }
+}
+
+# ============================================================================
+# DERIVED VALUES - Computed cost management flags
+# ============================================================================
+
+# Billing export
+
+# Budget count
+
+# Total budget amount
+
+# CUD configuration
+
+# Cost optimization flags
+
+# ============================================================================
+# Next Steps:
+# 1. Enable billing export in the Cloud Billing console
+# 2. Create budgets and set up notification channels
+# 3. Review cost allocation labels and enforce via org policy
+# 4. Analyze usage before committing to CUDs
+# 5. Set up custom cost reports in BigQuery
+# ============================================================================

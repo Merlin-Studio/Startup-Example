@@ -1,0 +1,134 @@
+
+
+# ============================================================================
+# CENTRALIZED LOGGING
+# ============================================================================
+
+centralized_logging = {
+  enabled         = true
+  logging_project = ""
+  
+  aggregated_sinks = {}
+}
+
+
+# ============================================================================
+# LOG RETENTION SETTINGS
+# ============================================================================
+
+log_retention = {
+  default_retention_days = 365
+
+  custom_buckets = {}
+}
+
+# Logging buckets module configuration
+
+# ============================================================================
+# MONITORING WORKSPACE
+# ============================================================================
+
+monitoring_workspace = {
+  workspace_project  = "prj-monitoring"
+  monitored_projects = "all"
+}
+
+# ============================================================================
+# ALERTING POLICIES
+# ============================================================================
+
+alerting_policies = {
+  "high-cpu" = {
+    display_name = "High CPU"
+    category     = "infrastructure"
+
+    conditions = [{
+      display_name = "High CPU condition"
+      condition_threshold = {
+        filter          = "metric.type=\"compute.googleapis.com/instance/cpu/utilization\""
+        comparison      = "COMPARISON_GT"
+        threshold_value = 80
+        duration        = "300s"
+        aggregations = [{
+          alignment_period   = "60s"
+          per_series_aligner = "ALIGN_MEAN"
+        }]
+      }
+    }]
+    
+    notification_channels = [
+      "email"
+    ]
+
+    alert_strategy = {
+      auto_close = "604800s"
+    }
+  }
+}
+
+# ============================================================================
+# NOTIFICATION CHANNELS
+# ============================================================================
+
+notification_channels = {
+  "primary-contact" = {
+    display_name = "primary-contact"
+    type         = "email"
+    
+    labels = {
+      email_address = "cloudteam@acme.com"
+    }
+    
+    enabled = true
+  }
+}
+
+# ============================================================================
+# UPTIME CHECKS
+# ============================================================================
+
+uptime_checks = {}
+
+# ============================================================================
+# DASHBOARDS
+# ============================================================================
+
+dashboards = {
+  "infrastructure-overview" = {
+    display_name = "Infrastructure Overview"
+    type         = "infrastructure"
+    template     = "gcp_default"
+  }
+}
+
+# Dashboard definitions for Terraform
+dashboard_configs = [
+  {
+    display_name = "Infrastructure Overview"
+    grid_layout = {
+      columns = 2
+      widgets = []  # Populated by dashboard templates
+    }
+  }
+]
+
+# ============================================================================
+# DERIVED VALUES - Computed monitoring flags
+# ============================================================================
+
+# Centralized logging
+
+# Log retention
+
+# Monitoring workspace
+
+# Counts
+
+# ============================================================================
+# Next Steps:
+# 1. Create logging and monitoring projects before applying
+# 2. Configure notification channel credentials (PagerDuty keys, etc.)
+# 3. Customize dashboard layouts based on your services
+# 4. Set up appropriate alert thresholds for your SLOs
+# 5. Proceed to 09_cost_management.tfvars for budget configuration
+# ============================================================================

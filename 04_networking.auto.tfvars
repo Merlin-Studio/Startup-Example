@@ -1,0 +1,204 @@
+# ----------------------------------------------------------------------------
+# COMPLIANCE FRAMEWORK UPGRADES
+# The following values were automatically upgraded from their defaults to meet
+# compliance framework requirements. User-explicit values were preserved.
+# ----------------------------------------------------------------------------
+# [CIS] cloud_dns.dnssec.enabled: <unset> -> True (CIS GCP 3.x — DNSSEC for DNS response integrity)
+# ----------------------------------------------------------------------------
+
+
+# ============================================================================
+# VPC ARCHITECTURE
+# ============================================================================
+
+# Network architecture pattern
+vpc_architecture = "standalone"
+
+# ============================================================================
+# VPC NETWORKS
+# ============================================================================
+
+vpc_networks = {
+  "vpc-main" = {
+    name                    = "vpc-main"
+    description             = "Main VPC for all workloads"
+    project                 = "prj-shared-services"
+    purpose                 = "production"
+    routing_mode            = "GLOBAL"
+    mtu                     = 1460
+    delete_default_routes   = false
+    auto_create_subnetworks = false
+  }
+}
+
+# ============================================================================
+# SUBNETS
+# ============================================================================
+
+subnets = {
+  "sb-main-us-central1" = {
+    name                  = "sb-main-us-central1"
+    vpc                   = "vpc-main"
+    region                = "us-central1"
+    ip_cidr_range         = "10.0.0.0/24"
+    purpose               = "general"
+    private_google_access = true
+    
+    # VPC Flow Logs configuration
+    flow_logs = {
+      enabled = true
+      aggregation_interval = "INTERVAL_5_MIN"
+      flow_sampling        = 0.5
+      metadata             = "INCLUDE_ALL_METADATA"
+    }
+
+    secondary_ip_ranges = {}
+  }
+}
+
+# ============================================================================
+# FIREWALL CONFIGURATION
+# ============================================================================
+
+# Firewall policy type
+firewall_policy_type = "vpc_firewall_rules"
+
+# Baseline firewall rules
+firewall_rules = {
+  "allow-internal" = {
+    name        = "allow-internal"
+    description = "Allow internal traffic"
+    direction   = "INGRESS"
+    action      = "allow"
+    priority    = 1000
+    disabled    = false
+    
+    source_ranges = [
+      "10.0.0.0/8"
+    ]
+
+
+
+
+    rules = [
+      {
+        protocol = "all"
+      }
+    ]
+
+  },
+  "allow-iap" = {
+    name        = "allow-iap"
+    description = "Allow IAP for SSH/RDP"
+    direction   = "INGRESS"
+    action      = "allow"
+    priority    = 1000
+    disabled    = false
+    
+    source_ranges = [
+      "35.235.240.0/20"
+    ]
+
+
+
+
+    rules = [
+      {
+        protocol = "tcp"
+        ports    = [
+          "22",
+          "3389"
+        ]
+      }
+    ]
+
+  }
+}
+
+# ============================================================================
+# CLOUD NAT
+# Outbound internet access for private instances
+# ============================================================================
+
+cloud_nat = {
+  "nat-vpc-main-us-central1" = {
+    name                   = "nat-vpc-main-us-central1"
+    vpc                    = "vpc-main"
+    region                 = "us-central1"
+    router_name            = "router-vpc-main-us-central1"
+    nat_ip_allocate_option = "AUTO_ONLY"
+    source_subnetwork_ip_ranges = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+    min_ports_per_vm       = 64
+    enable_logging         = true
+  }
+}
+
+# ============================================================================
+# CLOUD DNS
+# Private DNS zones and configuration
+# ============================================================================
+
+cloud_dns = {
+  private_zones = {}
+  
+  enable_dns_logging    = false
+
+  # DNSSEC Policy (CIS GCP 3.3-3.5)
+  dnssec = {
+    enabled       = true
+    key_algorithm = "ecdsap256sha256"
+  }
+
+  # DNS Forwarding
+  inbound_forwarding    = false
+
+  # DNS Response Policy
+}
+
+# ============================================================================
+# PRIVATE GOOGLE ACCESS
+# Access to Google APIs from private instances
+# ============================================================================
+
+private_google_access = {
+  enable_private_google_access = true
+  private_service_connect      = false
+  restricted_api_access        = false
+}
+
+
+# ============================================================================
+# VPC PEERING
+# Connections between VPCs
+# ============================================================================
+
+# VPC peering not configured
+# vpc_peering = {}
+
+# ============================================================================
+# SHARED VPC CONFIGURATION
+# (Only applicable for shared_vpc architecture)
+# ============================================================================
+
+
+# ============================================================================
+# DERIVED VALUES - Computed for reference
+# ============================================================================
+
+# VPC architecture type
+
+# All VPC names
+
+# All subnet CIDRs for IP planning reference
+
+# Regions in use
+
+# Hub VPC (for hub-spoke architecture)
+
+# ============================================================================
+# Next Steps:
+# 1. Review IP addressing plan for conflicts with existing networks
+# 2. Verify firewall rules align with security requirements
+# 3. Configure Cloud NAT for regions requiring outbound internet access
+# 4. Proceed to 05_hybrid_connectivity.tfvars for on-premises connectivity
+# ============================================================================

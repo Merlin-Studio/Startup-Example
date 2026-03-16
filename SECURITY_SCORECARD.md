@@ -1,0 +1,71 @@
+# Security Scorecard
+
+**Score:** 83/100
+**Grade:** B
+
+**Compliance Frameworks:** CIS
+
+## Compliance Checks
+These checks are performed against your configuration intent based on the selected compliance frameworks.
+
+### IAM Model (2/2 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| domain_restricted_sharing.enabled | ✅ PASS | required | CIS | CIS GCP 1.1 | CIS requires restricting IAM policy members to approved organizational domains to prevent external grant of access to cloud resources |
+| service_account_key_policy | ✅ PASS | required | CIS | CIS GCP 1.4, 1.5, 1.6 | CIS requires restricting service account key creation and usage; prefer Workload Identity and short-lived tokens over exported keys |
+
+### Networking (2/2 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| private_google_access_config.enable_private_google_access | ✅ PASS | required | CIS | CIS GCP 3.8 | CIS requires enabling Private Google Access on all subnets so VM instances without external IPs can reach Google APIs without traversing the public internet |
+| cloud_dns.dnssec.enabled | ✅ PASS | recommended | CIS | CIS GCP 3.x | CIS recommends DNSSEC to protect against DNS spoofing and ensure DNS response integrity |
+
+### Security Baseline (10/10 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| kms_configuration.enabled | ✅ PASS | recommended | CIS | CIS GCP 5.2, 6.6, 7.2 | CIS recommends customer-managed encryption keys (CMEK) for sensitive data at rest across Cloud Storage, BigQuery, and Cloud SQL |
+| audit_logging.data_access.enabled | ✅ PASS | required | CIS | CIS GCP 2.1 | CIS requires Data Access audit logs be enabled for all services to track reads and writes to user data |
+| audit_logging.retention_days | ✅ PASS | recommended | CIS | CIS GCP 2.2 | CIS recommends minimum 365-day retention of audit logs to support incident investigation and compliance evidence |
+| data_classification_config.enabled | ✅ PASS | recommended | CIS | CIS GCP 5.1, 7.1 | CIS recommends data classification to identify sensitive data requiring CMEK encryption and additional access controls |
+| Org Policy: iam.disableServiceAccountKeyCreation | ✅ PASS | required | CIS |  | Policy iam.disableServiceAccountKeyCreation is enforced. |
+| Org Policy: compute.requireShieldedVm | ✅ PASS | required | CIS |  | Policy compute.requireShieldedVm is enforced. |
+| Org Policy: compute.disableSerialPortAccess | ✅ PASS | required | CIS |  | Policy compute.disableSerialPortAccess is enforced. |
+| Org Policy: compute.requireOsLogin | ✅ PASS | required | CIS |  | Policy compute.requireOsLogin is enforced. |
+| Org Policy: compute.disableNestedVirtualization | ✅ PASS | recommended | CIS |  | Policy compute.disableNestedVirtualization is enforced. |
+| Org Policy: compute.vmExternalIpAccess | ✅ PASS | recommended | CIS |  | Policy compute.vmExternalIpAccess is enforced. |
+
+### Advanced Security (0/2 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| security_command_center.tier | ❌ FAIL | recommended | CIS | CIS GCP General | Field not configured. SCC Premium enables Security Health Analytics which provides automated CIS benchmark compliance monitoring and vulnerability detection |
+| binary_authorization.enabled | ❌ FAIL | recommended | CIS | CIS GCP 8.5 | Field not configured. CIS recommends Binary Authorization to enforce deploy-time image attestation policies ensuring only trusted, scanned container images run on GKE clusters |
+
+### Logging & Monitoring (2/2 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| centralized_logging.enabled | ✅ PASS | required | CIS | CIS GCP 2.2 | CIS requires centralized log aggregation with configured sinks to ensure audit logs are exported to a tamper-resistant destination for long-term retention and analysis |
+| log_retention.default_retention_days | ✅ PASS | recommended | CIS | CIS GCP 2.2 | CIS recommends minimum 365-day log retention to support forensic investigation, trend analysis, and regulatory compliance evidence |
+
+### Data Platform (3/3 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| bigquery_config.cmek_enabled | ✅ PASS | recommended | CIS | CIS GCP 7.2 | CIS recommends CMEK encryption for BigQuery datasets to maintain customer control over encryption keys and enable key rotation governance |
+| cloud_storage_config.cmek_enabled | ✅ PASS | recommended | CIS | CIS GCP 5.2 | CIS recommends CMEK encryption for Cloud Storage buckets containing sensitive data to ensure customer-controlled key lifecycle management |
+| cloud_sql_config.cmek_enabled | ✅ PASS | recommended | CIS | CIS GCP 6.6 | CIS recommends CMEK encryption for Cloud SQL instances to provide customer-managed key control and support compliance key rotation requirements |
+
+### Application Services (0/2 passed)
+
+| Check | Status | Severity | Frameworks | Reference | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| cloud_run.default_settings.ingress | ❌ FAIL | recommended | CIS | CIS GCP 7.1 | Field not configured. Cloud Run services should restrict ingress to internal traffic or GCLB to minimize attack surface |
+| cloud_functions.default_settings.ingress | ❌ FAIL | recommended | CIS | CIS GCP 7.2 | Field not configured. Cloud Functions should restrict ingress to internal traffic or GCLB to minimize attack surface |
+
+## Technical Infrastructure Checks (Checkov)
+No technical infrastructure issues were detected by Checkov in the generated Terraform resources.
+
